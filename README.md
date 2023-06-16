@@ -26,3 +26,4 @@ Handler: io.micronaut.function.aws.proxy.MicronautLambdaHandler
 - [https://docs.aws.amazon.com/apigateway/](https://docs.aws.amazon.com/apigateway/)
 
 
+The file for development

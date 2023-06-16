@@ -1,0 +1,52 @@
+name: Environmnet Workflow
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Compile
+        run: echo Hello, world!
+   
+  Development:
+    name: Development
+    if: github.event_name == 'pull_request'
+    needs: [Build]
+    runs-on: ubuntu-latest
+    environment:
+      name: Development
+    
+    steps:
+      - name: Deployment
+        run: echo I am deploying!
+   
+  QA:
+    name: QA
+  
+    needs: Development
+    runs-on: ubuntu-latest
+    environment:
+      name: QA
+    
+    steps:
+      - name: QA
+        run: echo testing!
+           
+  Production:
+    name: Production
+    needs: [QA]
+    runs-on: ubuntu-latest
+    environment:
+      name: Production
+    
+    steps:
+      - name: Production
+        run: echo the Production Happens Here!

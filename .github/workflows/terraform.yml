@@ -1,12 +1,12 @@
-name: "terraform-deploy"
+name: "Java CI with Gradle to AWS - QA"
 
 on:
   push:
     branches:
-      - master
+      - testing
   pull_request:
     branches:
-      - master
+      - testing
 
 jobs:
   build:

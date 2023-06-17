@@ -9,49 +9,29 @@ on:
       - master
 
 jobs:
-  PushToAWS:
+  build:
+
     runs-on: ubuntu-latest
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: ${{ secrets.AWS_REGION }}
-      AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-      jwtSecret: ${{ secrets.JWT_SECRET }} #github secret
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Use Node.js 16
-        uses: actions/setup-node@v3
-        with:
-          node-version: "16.x"
-      - run: |
-          npm i -D typescript ts-loader webpack webpack-cli
-          cd api && npm ci
-          # tsc
-          cd ..
-          mkdir zip
-          zip -r zip/api.zip api
-        env:
-          CI: true
-      - name: Push Zip to S3
-        uses: jakejarvis/s3-sync-action@v0.3.1
-        env:
-          SOURCE_DIR: "./zip"
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-
-      - name: Terraform Init
-        id: init
-        run: |
-          terraform fmt
-          terraform init -upgrade
-
-      - name: Terraform Apply
-        run: terraform apply -auto-approve
-        env:
-          TF_VAR_aws_s3_bucket: ${{ secrets.AWS_S3_BUCKET }}
-          TF_VAR_aws_region: ${{ secrets.AWS_REGION }}
-          TF_VAR_jwtSecret: ${{ secrets.JWT_SECRET }}
+    - uses: actions/checkout@v3
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+    - name: change permission
+      run: git update-index --chmod=+x gradlew
+    - name: Configure AWS and SAM
+      uses: aws-actions/setup-sam@v1
+    - uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+    - name: Build with Gradle
+      uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
+      with:
+        arguments: build
+    - name: Deploy with SAM
+      run:  sam deploy --no-confirm-changeset --no-fail-on-empty-changeset --config-file samconfig-prod.toml
